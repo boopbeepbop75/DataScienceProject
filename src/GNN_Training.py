@@ -1,36 +1,33 @@
+import random
+from itertools import combinations
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
 import torchvision
 import torchvision.transforms as transforms
-from torchvision.transforms import ToTensor
+from scipy.ndimage import find_objects
 from torch.utils.data import DataLoader
 from torch_geometric.nn import GCNConv
-
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
+from torchvision.transforms import ToTensor
 
 import Data_cleanup
-from Dataset import SLICDataset
 import HyperParameters
-import random
+import Utils as U
+from Dataset import SLICDataset
 
-from scipy.ndimage import find_objects
-from itertools import combinations
-
-#Load and or preprocess Data
-project_folder = 'DataScienceProject/'
 # Load or preprocess data
 try:
     # Load the preprocessed data stored in .pt files
-    training_data = torch.load(f'{project_folder}processed_training_graphs.pt')
-    testing_data = torch.load(f'{project_folder}processed_testing_graphs.pt')
-    training_labels = np.load(f'{project_folder}training_labels.npy')
-    testing_labels = np.load(f'{project_folder}testing_labels.npy')
+    training_data = torch.load((U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve())
+    testing_data = torch.load((U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
+    training_labels = np.load((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve())
+    testing_labels = np.load((U.CLEAN_DATA_FOLDER / 'testing_labels.npy').resolve())
 
     print(training_data)
 
@@ -47,16 +44,15 @@ except:
     # If the data hasn't been preprocessed, clean it, preprocess it, and save it
     print("data not found")
     Data_cleanup.clean_data()
-    normalized_training_images = np.load(f'{project_folder}normalized_training_images.npy')
-    normalized_testing_images = np.load(f'{project_folder}normalized_testing_images.npy')
-    training_labels = np.load(f'{project_folder}training_labels.npy')
-    testing_labels = np.load(f'{project_folder}testing_labels.npy')
+    training_data = torch.load((U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve())
+    testing_data = torch.load((U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
+    training_labels = np.load((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve())
+    testing_labels = np.load((U.CLEAN_DATA_FOLDER / 'testing_labels.npy').resolve())
 
     # Further preprocessing (assuming you generate node features and edges during cleanup)
     # Example: create_edge_index_from_slic(segments) and compute_node_features(image, segments)
 
 #LABELS
-CLASSES = ["Builings", "Forest", "Glacier", "Mountain", "Sea", "Street"]
 ###Finish loading data###
 
 def show_image(x, y):
@@ -70,8 +66,8 @@ def show_image(x, y):
 '''#CHECK IMAGES
 random_index = random.randint(0, len(normalized_training_images)-1)
 random_index_2 = random.randint(0, len(normalized_testing_images)-1)
-show_image(normalized_training_images[random_index], CLASSES[training_labels[random_index]])
-show_image(normalized_testing_images[random_index_2], CLASSES[testing_labels[random_index_2]])
+show_image(normalized_training_images[random_index], HyperParameters.CLASSES[training_labels[random_index]])
+show_image(normalized_testing_images[random_index_2], HyperParameters.CLASSES[testing_labels[random_index_2]])
 
 # Transpose to (N, C, H, W) format
 normalized_training_images = np.transpose(normalized_training_images, (0, 3, 1, 2))  # Shape (N, 3, 128, 128)
@@ -91,7 +87,7 @@ BATCH_SIZE = HyperParameters.BATCH_SIZE
 HIDDEN_UNITS = HyperParameters.HIDDEN_UNITS
 OUTPUT_SHAPE = len(CLASSES)
 LEARNING_RATE = HyperParameters.LEARNING_RATE
-EPOCHS = HyperParameters.LEARNING_RATE
+EPOCHS = HyperParameters.EPOCHS
 
 
 
