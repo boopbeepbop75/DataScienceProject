@@ -3,7 +3,7 @@ n_segments = 75
 sigma = 5
 
 ### MODEL HYPER PARAMETERS ###
-CLASSES = ["Builings", "Forest", "Glacier", "Mountain", "Sea", "Street"]
+CLASSES = ["Buildings", "Forest", "Glacier", "Mountain", "Sea", "Street"]
 BATCH_SIZE = 32
 HIDDEN_UNITS = 10
 OUTPUT_SHAPE = len(CLASSES)
