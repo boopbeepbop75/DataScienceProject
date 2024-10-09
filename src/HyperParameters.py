@@ -1,5 +1,5 @@
 ### SLIC HYPER PARAMETERS ###
-n_segments = 50
+n_segments = 75
 sigma = 5
 
 ### MODEL HYPER PARAMETERS ###

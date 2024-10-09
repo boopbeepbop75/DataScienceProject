@@ -1,82 +1,111 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+from PIL import Image
+import os
+import glob
 import numpy as np
-from skimage.color import rgb2lab
-from skimage.measure import regionprops
-import torch
-import torch.nn as nn
-from torch_geometric.nn import GCNConv
-from torch_geometric.data import Data
-from scipy.ndimage import find_objects
-from itertools import combinations
+from skimage.segmentation import slic, mark_boundaries
+from skimage import color
+from skimage.measure import regionprops, label
+from HyperParameters import *
 
-def create_edge_index_from_slic(segments):
-    """
-    Create edge_index from SLIC segmentation.
-    
-    :param segments: 2D numpy array of segment labels from SLIC
-    :return: edge_index tensor for PyTorch Geometric
-    """
-    # Find unique segments
-    unique_segments = np.unique(segments)
-    num_segments = len(unique_segments)
-    
-    # Create a mapping from segment label to index
-    segment_to_index = {seg: idx for idx, seg in enumerate(unique_segments)}
-    
-    # Find bounding box for each segment
-    bounding_boxes = find_objects(segments)
-    
-    # Function to check if two segments are neighbors
-    def are_neighbors(seg1, seg2):
-        bb1 = bounding_boxes[segment_to_index[seg1]]
-        bb2 = bounding_boxes[segment_to_index[seg2]]
-        return (
-            (bb1[0].start <= bb2[0].stop and bb2[0].start <= bb1[0].stop) and
-            (bb1[1].start <= bb2[1].stop and bb2[1].start <= bb1[1].stop)
-        )
-    
-    # Create edges
-    edges = []
-    for seg1, seg2 in combinations(unique_segments, 2):
-        if are_neighbors(seg1, seg2):
-            # Add edges in both directions
-            edges.append([segment_to_index[seg1], segment_to_index[seg2]])
-            edges.append([segment_to_index[seg2], segment_to_index[seg1]])
-    
-    # Convert to PyTorch tensor
-    edge_index = torch.tensor(edges, dtype=torch.long).t()
-    
-    return edge_index
+# Original image
+def show_comparison(image, label, segments):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 7))
+    ax1.imshow(image)
+    ax1.set_title(CLASSES[label])
+    ax1.axis('off')
 
-def compute_node_features(image, segments):
-    # Convert image to LAB color space
-    image_lab = rgb2lab(image)
+    # Superpixel image with boundaries
+    ax2.imshow(mark_boundaries(image, segments))
+    ax2.set_title('SLIC Segmentation')
+    ax2.axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+def find_neighbors(segments, superpixel_id):
+    """
+    Find neighboring superpixels for a given superpixel ID.
+
+    Parameters:
+        segments (ndarray): 2D array where each element is the ID of the superpixel.
+        superpixel_id (int): The ID of the superpixel to find neighbors for.
+
+    Returns:
+        list: A list of neighboring superpixel IDs.
+    """
+    # Get the indices of the given superpixel
+    superpixel_indices = np.argwhere(segments == superpixel_id)
     
-    # Get unique segments
-    unique_segments = np.unique(segments)
+    # Initialize a set to hold neighboring superpixels
+    neighbors = set()
     
-    # Initialize feature array
-    num_features = 6  # 3 for color, 3 for other properties
-    node_features = np.zeros((len(unique_segments), num_features), dtype=np.float32)
+    # Check for neighbors in the 8 surrounding pixels
+    for idx in superpixel_indices:
+        x, y = idx[0], idx[1]
+        
+        # Loop through neighboring coordinates
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if (dx == 0 and dy == 0):  # Skip the center pixel
+                    continue
+                neighbor_x, neighbor_y = x + dx, y + dy
+                
+                # Check if the neighbor is within bounds
+                if (0 <= neighbor_x < segments.shape[0] and
+                    0 <= neighbor_y < segments.shape[1]):
+                    neighbor_id = segments[neighbor_x, neighbor_y]
+                    if neighbor_id != superpixel_id:  # Avoid adding the same superpixel
+                        neighbors.add(neighbor_id)
     
-    for i, segment in enumerate(unique_segments):
-        # Create mask for current segment
-        mask = segments == segment
-        
-        # Get region properties
-        props = regionprops(mask.astype(int), image_lab)[0]
-        
-        # Compute features
-        mean_color = props.mean_intensity
-        area = props.area
-        perimeter = props.perimeter
-        
-        # Ensure mean_color is 3-dimensional
-        if mean_color.size == 1:
-            mean_color = np.array([mean_color, 0, 0])
-        elif mean_color.size == 2:
-            mean_color = np.append(mean_color, 0)
-        
-        # Combine features
-        node_features[i] = np.concatenate([mean_color, [area, perimeter, props.eccentricity]])
+    return list(neighbors)
+
+def average_color_of_superpixel(image, segments, segment_id):
+    # Get the mask for the superpixel
+    mask = (segments == segment_id)
+
+    # Calculate the average color
+    average_color = image[mask].mean(axis=0)
+
+    return average_color
+
+def calculate_eccentricity(segments, segment_id):
+    mask = (segments == segment_id)
+    labeled_superpixel = label(mask)
+    properties = regionprops(labeled_superpixel)
+    region = properties[0]
+    return region.eccentricity
+
+def make_graph_for_image_slic(slic_image):
+    segments = slic(slic_image, n_segments=n_segments, sigma=sigma)
     
-    return torch.from_numpy(node_features)
+    # Create the graph
+    G = nx.Graph()
+
+    # Step 2: Loop over each segment (superpixel)
+    for segment_id in np.unique(segments):
+        average_color = average_color_of_superpixel(slic_image, segments, segment_id) #Get the average color of the superpixel
+        eccentricity = calculate_eccentricity(segments, segment_id) #Calculate how close the superpixel is to a circular shape
+        neighbors = find_neighbors(segments, segment_id) #Find the neighboring superpixels
+
+        #print(f'Eccentricity: {eccentricity}')
+        G.add_node(segment_id, color=average_color, eccentricity=eccentricity) #Create the node, detailing the shape and average color
+        #print(neighbors)
+        for neighbor in neighbors:
+            G.add_edge(segment_id, neighbor) #Add the neighboring superpixels as edges connected the neighbor nodes to the current superpixel
+
+    return G
+
+def draw_graph(G):
+    node_colors = [data['color'] for _, data in G.nodes(data=True)]
+    # Extract eccentricity values for node sizes
+    eccentricity_values = [data['eccentricity'] for _, data in G.nodes(data=True)]
+    # Normalize the values to scale them for node sizes
+    normalized_sizes = [500 * (ecc / max(eccentricity_values)) for ecc in eccentricity_values]  # Scale for visibility
+
+    #Draw the graph
+    nx.draw(G, node_color=node_colors, node_size=normalized_sizes, with_labels=True, font_color="white")
+    #Node colors correspond to the average pixel colors
+    #Node sizes correspond to how circular each superpixel is
+    plt.show()
