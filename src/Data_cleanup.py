@@ -1,12 +1,11 @@
 import glob
 import os
-from pathlib import Path
 
 import numpy as np
 import torch
 from PIL import Image
 from skimage.segmentation import slic
-from torch_geometric.data import Data
+from torch_geometric.utils import from_networkx
 
 import Graph_preprocessing_functions
 import HyperParameters
@@ -46,7 +45,7 @@ def process_images_to_graphs(images, labels):
         #Update progress
         if (i + 1) % 100 == 0:
             print(f"Processed {i + 1} out of {len(images)} images")
-        if i in stops:
+        if i in stops and HyperParameters.show_visualization_stops:
             #Visualize random Graphs
             segments = slic(image, n_segments=HyperParameters.n_segments, sigma=HyperParameters.sigma)
             Graph_preprocessing_functions.show_comparison(image, labels[i], segments)
@@ -55,6 +54,8 @@ def process_images_to_graphs(images, labels):
 
 def clean_data():
     classes = HyperParameters.CLASSES
+    print(training_folders[0])
+    print()
 
     print("Loading and preprocessing images...")
     training_data, training_labels = load_and_preprocess_images(training_folders)
@@ -67,8 +68,11 @@ def clean_data():
     processed_testing_graphs = process_images_to_graphs(testing_data, testing_labels)
 
     print("Saving processed graphs...")
-    torch.save(processed_training_graphs, (U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve())
-    torch.save(processed_testing_graphs, (U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
+    training_tensor = [from_networkx(G) for G in processed_training_graphs]  # Convert to PyTorch Geometric Data objects
+    testing_tensor =  [from_networkx(G) for G in processed_testing_graphs]  # Convert to PyTorch Geometric Data objects
+    print(training_tensor[0])
+    torch.save(training_tensor, (U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve())
+    torch.save(testing_tensor, (U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
     
     print("Saving labels...")
     np.save((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve(), training_labels)

@@ -75,7 +75,9 @@ def calculate_eccentricity(segments, segment_id):
     labeled_superpixel = label(mask)
     properties = regionprops(labeled_superpixel)
     region = properties[0]
-    return region.eccentricity
+    
+    aspect_ratio = region.major_axis_length / region.minor_axis_length if region.minor_axis_length > 0 else 0
+    return region.eccentricity, aspect_ratio
 
 def make_graph_for_image_slic(slic_image):
     segments = slic(slic_image, n_segments=n_segments, sigma=sigma)
@@ -86,11 +88,11 @@ def make_graph_for_image_slic(slic_image):
     # Step 2: Loop over each segment (superpixel)
     for segment_id in np.unique(segments):
         average_color = average_color_of_superpixel(slic_image, segments, segment_id) #Get the average color of the superpixel
-        eccentricity = calculate_eccentricity(segments, segment_id) #Calculate how close the superpixel is to a circular shape
+        eccentricity, aspect_ratio = calculate_eccentricity(segments, segment_id) #Calculate how close the superpixel is to a circular shape
         neighbors = find_neighbors(segments, segment_id) #Find the neighboring superpixels
 
         #print(f'Eccentricity: {eccentricity}')
-        G.add_node(segment_id, color=average_color, eccentricity=eccentricity) #Create the node, detailing the shape and average color
+        G.add_node(segment_id, color=average_color, eccentricity=eccentricity, aspect_ratio=aspect_ratio) #Create the node, detailing the shape and average color
         #print(neighbors)
         for neighbor in neighbors:
             G.add_edge(segment_id, neighbor) #Add the neighboring superpixels as edges connected the neighbor nodes to the current superpixel
@@ -102,10 +104,29 @@ def draw_graph(G):
     # Extract eccentricity values for node sizes
     eccentricity_values = [data['eccentricity'] for _, data in G.nodes(data=True)]
     # Normalize the values to scale them for node sizes
-    normalized_sizes = [500 * (ecc / max(eccentricity_values)) for ecc in eccentricity_values]  # Scale for visibility
+    #normalized_sizes = [500 * (ecc / max(eccentricity_values)) for ecc in eccentricity_values]  # Scale for visibility
+    #Shape the nodes based on their aspect ratios
+    node_shapes = ["o" if G.nodes[node]['aspect_ratio'] < 1.5 else "s" for node in G.nodes]
 
+    # Normalize the eccentricity values to scale them for node sizes
+    normalized_sizes = [500 * (ecc / max(eccentricity_values)) for ecc in eccentricity_values]  # Scale for visibility
     #Draw the graph
-    nx.draw(G, node_color=node_colors, node_size=normalized_sizes, with_labels=True, font_color="white")
-    #Node colors correspond to the average pixel colors
-    #Node sizes correspond to how circular each superpixel is
+    # Generate positions for nodes
+    pos = nx.spring_layout(G)
+
+    # Draw each group of nodes based on their shape
+    for shape in ["o", "s"]:
+        # Select nodes and filter the corresponding sizes
+        selected_nodes = [node for node, node_shape in zip(G.nodes, node_shapes) if node_shape == shape]
+        selected_sizes = [normalized_sizes[i] for i, node in enumerate(G.nodes) if node in selected_nodes]
+        selected_colors = [node_colors[i] for i, node in enumerate(G.nodes) if node in selected_nodes]
+        
+        nx.draw_networkx_nodes(G, pos, node_shape=shape, nodelist=selected_nodes, 
+                            node_color=selected_colors, node_size=selected_sizes,
+                            edgecolors="black", linewidths=2)
+
+    # Draw edges and labels as usual
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_labels(G, pos, font_color="white")
+
     plt.show()
