@@ -4,12 +4,14 @@ import torch
 import torch.nn as nn
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data
+from torch_geometric.utils import to_networkx
 
 import Data_cleanup
 import HyperParameters
 import Utils as U
 from GNN_Model import GNN
-device = "cuda" if torch.cuda.is_available() else "cpu"
+from Graph_preprocessing_functions import is_grey, draw_graph
+device = HyperParameters.device
 print(device)
 
 # Load or preprocess data
@@ -68,26 +70,43 @@ testing_group = []
 
 for graph, label in zip(training_data, training_labels):
     data = Data(
-        x=torch.cat([graph.color, graph.eccentricity.unsqueeze(1), graph.aspect_ratio.unsqueeze(1)], dim=1),
-        edge_index=graph.edge_index,  # Edge indices
-        y=torch.tensor([label]),  # Ensure label is in tensor format
-        color=graph.color,  # Node colors
-        eccentricity=graph.eccentricity,  # Eccentricity of the nodes
-        aspect_ratio=graph.aspect_ratio,  # Aspect ratios of the nodes
+        x=torch.cat([
+            graph.color.float(), 
+            graph.eccentricity.unsqueeze(1).float(), 
+            graph.aspect_ratio.unsqueeze(1).float(), 
+            graph.solidity.unsqueeze(1).float()
+        ], dim=1).to(torch.float32),  # Ensure the concatenated tensor is float32
+        edge_index=graph.edge_index.to(torch.long),  # Ensure edge indices are long
+        y=torch.tensor([label], dtype=torch.long),  # Ensure label is long
+        color=graph.color.to(torch.float32),  # Ensure colors are float32
+        eccentricity=graph.eccentricity.to(torch.float32),  # Eccentricity as float32
+        aspect_ratio=graph.aspect_ratio.to(torch.float32),  # Aspect ratios as float32
+        solidity=graph.solidity.to(torch.float32),  # Solidity as float32
         num_nodes=graph.num_nodes,  # Total number of nodes
         num_edges=graph.num_edges  # Total number of edges
     )
     training_group.append(data)
+
+'''for graph in training_group:
+    for label in set(training_labels):'''
+
+
 print(f"View a graph data object: {training_group[0]}")
 
 for graph, label in zip(testing_data, testing_labels):
     data = Data(
-        x=torch.cat([graph.color, graph.eccentricity.unsqueeze(1), graph.aspect_ratio.unsqueeze(1)], dim=1),
-        edge_index=graph.edge_index,  # Edge indices
-        y=torch.tensor([label]),  # Ensure label is in tensor format
-        color=graph.color,  # Node colors
-        eccentricity=graph.eccentricity,  # Eccentricity of the nodes
-        aspect_ratio=graph.aspect_ratio,  # Aspect ratios of the nodes
+        x=torch.cat([
+            graph.color.float(), 
+            graph.eccentricity.unsqueeze(1).float(), 
+            graph.aspect_ratio.unsqueeze(1).float(), 
+            graph.solidity.unsqueeze(1).float()
+        ], dim=1).to(torch.float32),  # Ensure the concatenated tensor is float32
+        edge_index=graph.edge_index.to(torch.long),  # Ensure edge indices are long
+        y=torch.tensor([label], dtype=torch.long),  # Ensure label is long
+        color=graph.color.to(torch.float32),  # Ensure colors are float32
+        eccentricity=graph.eccentricity.to(torch.float32),  # Eccentricity as float32
+        aspect_ratio=graph.aspect_ratio.to(torch.float32),  # Aspect ratios as float32
+        solidity=graph.solidity.to(torch.float32),  # Solidity as float32
         num_nodes=graph.num_nodes,  # Total number of nodes
         num_edges=graph.num_edges  # Total number of edges
     )
@@ -99,24 +118,10 @@ testing_batches = DataLoader(testing_group, batch_size=BATCH_SIZE, shuffle=False
 
 print("Batch Lengths")
 print(len(training_batches))
-'''
-for batch in training_batches:
-    print(f'\n\nTraining Batch:')
-    print(f'Number of graphs in batch: {batch.num_graphs}')
-    print(f'Batch node features: {batch.x}')  # Node features (if this contains other features)
-    print(f'Batch edge indices: {batch.edge_index}')  # Edge indices
-    print(f'Batch labels: {batch.y}')  # Labels (if present)
-    print(f'Batch size: {batch.batch.size()}')  # Total number of nodes in the batch
-    
-    # Assuming your features are stored in the Data object:
-    print(f'Batch color features: {batch.color}')  # Color feature
-    print(f'Batch eccentricity features: {batch.eccentricity}')  # Eccentricity feature
-    print(f'Batch aspect ratio features: {batch.aspect_ratio}')  # Aspect ratio feature
 
-    break  # Remove this line if you want to see all batches
-'''
 #DECLARE MODEL INSTANCE WITH INPUT DIMENSION
-Model_0 = GNN(input_dim=3+1+1) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio
+# Before the model call
+Model_0 = GNN(input_dim=HyperParameters.input_dim) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio + 1 solidity
 Model_0.to(device)
 #Define loss function and optimizer
 loss_fn = nn.CrossEntropyLoss()
@@ -136,8 +141,17 @@ Training Loop
 #4. Back Propagation using loss
 #5. Optimizer step
 '''
+
+# Lists to store loss values
+train_losses = []
+val_losses = []
+
+best_val_loss = float('inf')  # Initialize best validation loss as infinity
+patience = HyperParameters.PATIENCE  
+epochs_no_improve = 0
+
 for epoch in range(EPOCHS):
-    print(f"Epoch: {epoch}\n---------")
+    print(f"\nEpoch: {epoch}\n---------")
     Model_0.train()
     training_loss = 0
     for batch_idx, batch_graphs in enumerate(training_batches):
@@ -164,6 +178,7 @@ for epoch in range(EPOCHS):
         optimizer.step()
     #Finish training batch and calculate the average loss:
     training_loss /= len(training_batches)
+    train_losses.append(training_loss)
 
     #Move to testing on the testing data
     print("Testing the Model...")
@@ -187,5 +202,31 @@ for epoch in range(EPOCHS):
 
     testing_loss /= len(testing_batches)
     test_acc /= len(testing_batches)
-
+    val_losses.append(testing_loss)
     print(f"Train loss: {training_loss:.4f} | Test loss: {testing_loss:.4f} | Test acc: {test_acc:.4f}%")
+
+    # Check if current validation loss is the best so far
+    if testing_loss < best_val_loss:
+        best_val_loss = testing_loss
+        # Save the model's parameters (state_dict) to a file
+        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / 'Model_0.pth').resolve())
+        print(f'Saved best model with validation loss: {best_val_loss:.4f}')
+        epochs_no_improve = 0  # Reset counter if improvement
+    else:
+        epochs_no_improve += 1
+        print(f'Num epochs since improvement: {epochs_no_improve}')
+        #stop training if overfitting starts to happen
+        if epochs_no_improve >= patience:
+            print("Early stopping")
+            break
+
+# Plotting the loss curves
+plt.figure(figsize=(10, 5))
+plt.plot(train_losses, label='Training Loss', color='blue')
+plt.plot(val_losses, label='Validation Loss', color='orange')
+plt.title('Loss Curves')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True)
+plt.show()

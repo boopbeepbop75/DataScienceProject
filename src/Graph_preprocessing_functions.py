@@ -1,13 +1,13 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from PIL import Image
-import os
-import glob
 import numpy as np
 from skimage.segmentation import slic, mark_boundaries
 from skimage import color
 from skimage.measure import regionprops, label
 from HyperParameters import *
+import torch
+import multiprocessing as mp
+from skimage.io import imread
 
 # Original image
 def show_comparison(image, label, segments):
@@ -77,10 +77,11 @@ def calculate_eccentricity(segments, segment_id):
     region = properties[0]
     
     aspect_ratio = region.major_axis_length / region.minor_axis_length if region.minor_axis_length > 0 else 0
-    return region.eccentricity, aspect_ratio
+    return region.eccentricity, aspect_ratio, region.solidity
+
 
 def make_graph_for_image_slic(slic_image):
-    segments = slic(slic_image, n_segments=n_segments, sigma=sigma)
+    segments = slic(slic_image, n_segments=n_segments, sigma=sigma, compactness=1)
     
     # Create the graph
     G = nx.Graph()
@@ -88,11 +89,14 @@ def make_graph_for_image_slic(slic_image):
     # Step 2: Loop over each segment (superpixel)
     for segment_id in np.unique(segments):
         average_color = average_color_of_superpixel(slic_image, segments, segment_id) #Get the average color of the superpixel
-        eccentricity, aspect_ratio = calculate_eccentricity(segments, segment_id) #Calculate how close the superpixel is to a circular shape
+        eccentricity, aspect_ratio, solidity = calculate_eccentricity(segments, segment_id) #Calculate how close the superpixel is to a circular shape
         neighbors = find_neighbors(segments, segment_id) #Find the neighboring superpixels
-
+        '''print(f'average color: {average_color}')
+        print(f'eccentricity: {eccentricity}')
+        print(f'aspect ratio: {aspect_ratio}')
+        print(f'solidity: {solidity}')'''
         #print(f'Eccentricity: {eccentricity}')
-        G.add_node(segment_id, color=average_color, eccentricity=eccentricity, aspect_ratio=aspect_ratio) #Create the node, detailing the shape and average color
+        G.add_node(segment_id, color=average_color, eccentricity=eccentricity, aspect_ratio=aspect_ratio, solidity=solidity) #Create the node, detailing the shape and average color
         #print(neighbors)
         for neighbor in neighbors:
             G.add_edge(segment_id, neighbor) #Add the neighboring superpixels as edges connected the neighbor nodes to the current superpixel
@@ -127,6 +131,17 @@ def draw_graph(G):
 
     # Draw edges and labels as usual
     nx.draw_networkx_edges(G, pos)
-    nx.draw_networkx_labels(G, pos, font_color="white")
+    #nx.draw_networkx_labels(G, pos, font_color="white")
 
     plt.show()
+
+#Detect grey images
+def is_grey(image_colors, threshold=13/255):
+    image_colors = np.array(image_colors) #Convert colors into a numpy array
+    std_per_pixel = np.std(image_colors) #Get the Standard deviation in color for each node
+    avg_std = np.mean(std_per_pixel) #Get the average std for the whole graph
+    return avg_std < threshold
+
+    print(f'std: {std_per_pixel}')
+
+
