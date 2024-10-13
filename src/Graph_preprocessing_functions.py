@@ -8,12 +8,28 @@ from HyperParameters import *
 import torch
 import multiprocessing as mp
 from skimage.io import imread
+from torch_geometric.data import Data
 
 # Original image
 def show_comparison(image, label, segments):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 7))
     ax1.imshow(image)
     ax1.set_title(CLASSES[label])
+    ax1.axis('off')
+
+    # Superpixel image with boundaries
+    ax2.imshow(mark_boundaries(image, segments))
+    ax2.set_title('SLIC Segmentation')
+    ax2.axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+# Original image
+def show_comparison_no_label(image, segments):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 7))
+    ax1.imshow(image)
+    ax1.set_title("Original Image")
     ax1.axis('off')
 
     # Superpixel image with boundaries
@@ -145,3 +161,21 @@ def is_grey(image_colors, threshold=13/255):
     print(f'std: {std_per_pixel}')
 
 
+def convert_to_data(data, label=0):
+    data = Data(
+        x=torch.cat([
+            data.color.float(), 
+            data.eccentricity.unsqueeze(1).float(), 
+            data.aspect_ratio.unsqueeze(1).float(), 
+            data.solidity.unsqueeze(1).float()
+        ], dim=1).to(torch.float32),  # Ensure the concatenated tensor is float32
+        edge_index=data.edge_index.to(torch.long),  # Ensure edge indices are long
+        y=torch.tensor([0], dtype=torch.long),  # Ensure label is long
+        color=data.color.to(torch.float32),  # Ensure colors are float32
+        eccentricity=data.eccentricity.to(torch.float32),  # Eccentricity as float32
+        aspect_ratio=data.aspect_ratio.to(torch.float32),  # Aspect ratios as float32
+        solidity=data.solidity.to(torch.float32),  # Solidity as float32
+        num_nodes=data.num_nodes,  # Total number of nodes
+        num_edges=data.num_edges  # Total number of edges
+    )
+    return data

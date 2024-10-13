@@ -10,7 +10,7 @@ import Data_cleanup
 import HyperParameters
 import Utils as U
 from GNN_Model import GNN
-from Graph_preprocessing_functions import is_grey, draw_graph
+from Graph_preprocessing_functions import is_grey, draw_graph, convert_to_data
 device = HyperParameters.device
 print(device)
 
@@ -69,22 +69,7 @@ training_group = []
 testing_group = []
 
 for graph, label in zip(training_data, training_labels):
-    data = Data(
-        x=torch.cat([
-            graph.color.float(), 
-            graph.eccentricity.unsqueeze(1).float(), 
-            graph.aspect_ratio.unsqueeze(1).float(), 
-            graph.solidity.unsqueeze(1).float()
-        ], dim=1).to(torch.float32),  # Ensure the concatenated tensor is float32
-        edge_index=graph.edge_index.to(torch.long),  # Ensure edge indices are long
-        y=torch.tensor([label], dtype=torch.long),  # Ensure label is long
-        color=graph.color.to(torch.float32),  # Ensure colors are float32
-        eccentricity=graph.eccentricity.to(torch.float32),  # Eccentricity as float32
-        aspect_ratio=graph.aspect_ratio.to(torch.float32),  # Aspect ratios as float32
-        solidity=graph.solidity.to(torch.float32),  # Solidity as float32
-        num_nodes=graph.num_nodes,  # Total number of nodes
-        num_edges=graph.num_edges  # Total number of edges
-    )
+    data = convert_to_data(graph, label)
     training_group.append(data)
 
 '''for graph in training_group:
@@ -94,22 +79,7 @@ for graph, label in zip(training_data, training_labels):
 print(f"View a graph data object: {training_group[0]}")
 
 for graph, label in zip(testing_data, testing_labels):
-    data = Data(
-        x=torch.cat([
-            graph.color.float(), 
-            graph.eccentricity.unsqueeze(1).float(), 
-            graph.aspect_ratio.unsqueeze(1).float(), 
-            graph.solidity.unsqueeze(1).float()
-        ], dim=1).to(torch.float32),  # Ensure the concatenated tensor is float32
-        edge_index=graph.edge_index.to(torch.long),  # Ensure edge indices are long
-        y=torch.tensor([label], dtype=torch.long),  # Ensure label is long
-        color=graph.color.to(torch.float32),  # Ensure colors are float32
-        eccentricity=graph.eccentricity.to(torch.float32),  # Eccentricity as float32
-        aspect_ratio=graph.aspect_ratio.to(torch.float32),  # Aspect ratios as float32
-        solidity=graph.solidity.to(torch.float32),  # Solidity as float32
-        num_nodes=graph.num_nodes,  # Total number of nodes
-        num_edges=graph.num_edges  # Total number of edges
-    )
+    data = convert_to_data(graph, label)
     testing_group.append(data)
 
 #Load the data into training batches.
