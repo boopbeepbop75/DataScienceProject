@@ -16,11 +16,13 @@ from Utils import training_folders, testing_folders
 import random
 import Data_cleanup
 
+n_segments = 50
+
 def visualize_data():
     training_data, training_labels = Data_cleanup.load_and_preprocess_images(training_folders)
     testing_data, testing_labels = Data_cleanup.load_and_preprocess_images(testing_folders)
     sample_size = 64
-    view_size = 5
+    view_size = 1
     training_indexes = random.sample(range(len(training_data)), min(sample_size, len(training_data)))
     testing_indexes = random.sample(range(len(testing_data)), min(sample_size, len(testing_data)))
 
@@ -32,7 +34,7 @@ def visualize_data():
     for i, x in enumerate(training_indexes):
         graph = Graph_preprocessing_functions.make_graph_for_image_slic(training_data[x])
         if i < view_size:
-            segments = slic(training_data[x], n_segments=HyperParameters.n_segments, sigma=HyperParameters.sigma)
+            segments = slic(training_data[x], n_segments=n_segments, sigma=HyperParameters.sigma)
             Graph_preprocessing_functions.show_comparison(training_data[x], training_labels[x], segments)
             Graph_preprocessing_functions.draw_graph(graph)
         processed_training_graphs.append(graph)
@@ -41,7 +43,7 @@ def visualize_data():
     for i, x in enumerate(testing_indexes):
         graph = Graph_preprocessing_functions.make_graph_for_image_slic(testing_data[x])
         if i < view_size:
-            segments = slic(testing_data[x], n_segments=HyperParameters.n_segments, sigma=HyperParameters.sigma)
+            segments = slic(testing_data[x], n_segments=n_segments, sigma=HyperParameters.sigma)
             Graph_preprocessing_functions.show_comparison(testing_data[x], testing_labels[x], segments)
             Graph_preprocessing_functions.draw_graph(graph)
         processed_testing_graphs.append(graph)
@@ -52,13 +54,13 @@ def visualize_data():
     print(training_tensor)
     print(training_tensor[0])
 
-    print("Saving processed graphs...")
+    '''print("Saving processed graphs...")
     torch.save(training_tensor, (U.TEST_DATA_FOLDER / 'processed_training_graphs.pt').resolve())
     torch.save(testing_tensor, (U.TEST_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
     
     print("Saving labels...")
     np.save((U.TEST_DATA_FOLDER / 'training_labels.npy').resolve(), processed_training_labels)
-    np.save((U.TEST_DATA_FOLDER / 'testing_labels.npy').resolve(), processed_testing_labels)
+    np.save((U.TEST_DATA_FOLDER / 'testing_labels.npy').resolve(), processed_testing_labels)'''
     print(f'Numebr of test data: {len(training_tensor)}')
     return training_tensor, testing_tensor
 

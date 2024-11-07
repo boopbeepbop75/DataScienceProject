@@ -21,8 +21,10 @@ try:
     testing_data = torch.load((U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
     training_labels = np.load((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve())
     testing_labels = np.load((U.CLEAN_DATA_FOLDER / 'testing_labels.npy').resolve())
+    print(training_labels)
+    print(testing_labels)
 
-    print(training_data)
+    #print(training_data)
 
     # Extract the images, graphs, and edges
     '''normalized_training_images = training_data['images']  # Images (already tensors)
@@ -69,6 +71,7 @@ training_group = []
 testing_group = []
 
 for graph, label in zip(training_data, training_labels):
+    #training
     data = convert_to_data(graph, label)
     training_group.append(data)
 
@@ -79,6 +82,7 @@ for graph, label in zip(training_data, training_labels):
 print(f"View a graph data object: {training_group[0]}")
 
 for graph, label in zip(testing_data, testing_labels):
+    #testing
     data = convert_to_data(graph, label)
     testing_group.append(data)
 
@@ -88,14 +92,15 @@ testing_batches = DataLoader(testing_group, batch_size=BATCH_SIZE, shuffle=False
 
 print("Batch Lengths")
 print(len(training_batches))
+print(len(testing_batches))
 
 #DECLARE MODEL INSTANCE WITH INPUT DIMENSION
 # Before the model call
-Model_0 = GNN(input_dim=HyperParameters.input_dim) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio + 1 solidity
-Model_0.to(device)
+Model_1 = GNN(input_dim=HyperParameters.input_dim) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio + 1 solidity
+Model_1.to(device)
 #Define loss function and optimizer
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(Model_0.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(Model_1.parameters(), lr=LEARNING_RATE)
 
 #Make Accuracy function
 def accuracy_fn(y_true, y_pred):
@@ -122,22 +127,23 @@ epochs_no_improve = 0
 
 for epoch in range(EPOCHS):
     print(f"\nEpoch: {epoch}\n---------")
-    Model_0.train()
+    Model_1.train()
     training_loss = 0
     for batch_idx, batch_graphs in enumerate(training_batches):
         #Get the batch of features to send to the model
         batch_graphs = batch_graphs.to(device)
         x = batch_graphs.x
+        #print(x)
         y = batch_graphs.y.to(device).long()  #Get the labels in y
         edge_index = batch_graphs.edge_index
         batch = batch_graphs.batch
         #1: Get predictions from the model
-        y_pred = Model_0(x, edge_index, batch)
-        
+        y_pred = Model_1(x, edge_index, batch)
+        #print(y_pred)
         #2: Calculate the loss on the model's predictions
         loss = loss_fn(y_pred, y) 
         training_loss += loss.item() #Keep track of each batch's loss
-
+        #print(training_loss)
         #3: optimizer zero grad
         optimizer.zero_grad()
 
@@ -153,7 +159,7 @@ for epoch in range(EPOCHS):
     #Move to testing on the testing data
     print("Testing the Model...")
     testing_loss, test_acc = 0, 0 #Metrics to test how well the model is doing
-    Model_0.eval()
+    Model_1.eval()
     with torch.inference_mode():
         for batch_idx, batch_graphs in enumerate(testing_batches):
             #Get the batch features to send to the model again
@@ -163,7 +169,7 @@ for epoch in range(EPOCHS):
             edge_index = batch_graphs.edge_index
             batch = batch_graphs.batch
             #1: Model Prediction
-            y_pred = Model_0(x, edge_index, batch)
+            y_pred = Model_1(x, edge_index, batch)
 
             #2: Calculate loss
             loss = loss_fn(y_pred, y)
@@ -179,7 +185,7 @@ for epoch in range(EPOCHS):
     if testing_loss < best_val_loss:
         best_val_loss = testing_loss
         # Save the model's parameters (state_dict) to a file
-        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / 'Model_0.pth').resolve())
+        torch.save(Model_1.state_dict(), (U.MODEL_FOLDER / 'Model_1.pth').resolve())
         print(f'Saved best model with validation loss: {best_val_loss:.4f}')
         epochs_no_improve = 0  # Reset counter if improvement
     else:
@@ -189,6 +195,8 @@ for epoch in range(EPOCHS):
         if epochs_no_improve >= patience:
             print("Early stopping")
             break
+    if epoch == 3: 
+        break
 
 # Plotting the loss curves
 plt.figure(figsize=(10, 5))

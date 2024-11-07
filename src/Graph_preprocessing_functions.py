@@ -102,7 +102,7 @@ def make_graph_for_image_slic(slic_image):
     # Create the graph
     G = nx.Graph()
 
-    # Step 2: Loop over each segment (superpixel)
+    # Loop over each segment (superpixel)
     for segment_id in np.unique(segments):
         average_color = average_color_of_superpixel(slic_image, segments, segment_id) #Get the average color of the superpixel
         eccentricity, aspect_ratio, solidity = calculate_eccentricity(segments, segment_id) #Calculate how close the superpixel is to a circular shape
@@ -170,7 +170,7 @@ def convert_to_data(data, label=0):
             data.solidity.unsqueeze(1).float()
         ], dim=1).to(torch.float32),  # Ensure the concatenated tensor is float32
         edge_index=data.edge_index.to(torch.long),  # Ensure edge indices are long
-        y=torch.tensor([0], dtype=torch.long),  # Ensure label is long
+        y=torch.tensor([label], dtype=torch.long),  # Ensure label is long
         color=data.color.to(torch.float32),  # Ensure colors are float32
         eccentricity=data.eccentricity.to(torch.float32),  # Eccentricity as float32
         aspect_ratio=data.aspect_ratio.to(torch.float32),  # Aspect ratios as float32

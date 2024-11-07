@@ -37,7 +37,7 @@ def model_on_test_data():
 def model_on_new_images():
     # Replace this with your image URL
     while True:
-        image_url = input("Enter image URL: ")
+        image_url = input("\nEnter image URL: ")
         try:
             # Fetch the image from the URL
             response = requests.get(image_url)
@@ -63,6 +63,7 @@ def make_prediction(img):
     graph = from_networkx(img_graph)
     data = convert_to_data(graph)
     data = data.to(device)
+    print("Image converted to graph...")
 
     Model_0.eval()
     with torch.no_grad():
