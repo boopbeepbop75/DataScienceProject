@@ -96,11 +96,11 @@ print(len(testing_batches))
 
 #DECLARE MODEL INSTANCE WITH INPUT DIMENSION
 # Before the model call
-Model_1 = GNN(input_dim=HyperParameters.input_dim) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio + 1 solidity
-Model_1.to(device)
+Model_0 = GNN(input_dim=HyperParameters.input_dim) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio + 1 solidity
+Model_0.to(device)
 #Define loss function and optimizer
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(Model_1.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(Model_0.parameters(), lr=LEARNING_RATE)
 
 #Make Accuracy function
 def accuracy_fn(y_true, y_pred):
@@ -127,7 +127,7 @@ epochs_no_improve = 0
 
 for epoch in range(EPOCHS):
     print(f"\nEpoch: {epoch}\n---------")
-    Model_1.train()
+    Model_0.train()
     training_loss = 0
     for batch_idx, batch_graphs in enumerate(training_batches):
         #Get the batch of features to send to the model
@@ -138,7 +138,7 @@ for epoch in range(EPOCHS):
         edge_index = batch_graphs.edge_index
         batch = batch_graphs.batch
         #1: Get predictions from the model
-        y_pred = Model_1(x, edge_index, batch)
+        y_pred = Model_0(x, edge_index, batch)
         #print(y_pred)
         #2: Calculate the loss on the model's predictions
         loss = loss_fn(y_pred, y) 
@@ -159,7 +159,7 @@ for epoch in range(EPOCHS):
     #Move to testing on the testing data
     print("Testing the Model...")
     testing_loss, test_acc = 0, 0 #Metrics to test how well the model is doing
-    Model_1.eval()
+    Model_0.eval()
     with torch.inference_mode():
         for batch_idx, batch_graphs in enumerate(testing_batches):
             #Get the batch features to send to the model again
@@ -169,7 +169,7 @@ for epoch in range(EPOCHS):
             edge_index = batch_graphs.edge_index
             batch = batch_graphs.batch
             #1: Model Prediction
-            y_pred = Model_1(x, edge_index, batch)
+            y_pred = Model_0(x, edge_index, batch)
 
             #2: Calculate loss
             loss = loss_fn(y_pred, y)
@@ -185,7 +185,7 @@ for epoch in range(EPOCHS):
     if testing_loss < best_val_loss:
         best_val_loss = testing_loss
         # Save the model's parameters (state_dict) to a file
-        torch.save(Model_1.state_dict(), (U.MODEL_FOLDER / 'Model_1.pth').resolve())
+        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / 'Model_1.pth').resolve())
         print(f'Saved best model with validation loss: {best_val_loss:.4f}')
         epochs_no_improve = 0  # Reset counter if improvement
     else:
@@ -195,8 +195,6 @@ for epoch in range(EPOCHS):
         if epochs_no_improve >= patience:
             print("Early stopping")
             break
-    if epoch == 3: 
-        break
 
 # Plotting the loss curves
 plt.figure(figsize=(10, 5))
