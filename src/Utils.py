@@ -12,3 +12,4 @@ training_folders = [(U.RAW_DATA_FOLDER / 'seg_train' / 'seg_train' / class_name.
                         for class_name in HyperParameters.CLASSES]
 testing_folders = [(U.RAW_DATA_FOLDER / 'seg_test' / 'seg_test' / class_name.lower()).resolve()
                        for class_name in HyperParameters.CLASSES]
+pred_folders = (U.RAW_DATA_FOLDER / 'seg_pred' / 'seg_pred').resolve()

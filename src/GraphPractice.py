@@ -5,7 +5,6 @@ import os
 import glob
 import numpy as np
 from skimage.segmentation import slic, mark_boundaries
-from skimage import color
 from skimage.measure import regionprops, label
 from HyperParameters import *
 

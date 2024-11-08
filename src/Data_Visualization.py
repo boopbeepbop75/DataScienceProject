@@ -1,17 +1,8 @@
-import glob
-import os
-from pathlib import Path
-
-import numpy as np
-import torch
-from PIL import Image
 from skimage.segmentation import slic
-from torch_geometric.data import Data
 from torch_geometric.utils import from_networkx
 
 import Graph_preprocessing_functions
 import HyperParameters
-import Utils as U
 from Utils import training_folders, testing_folders
 import random
 import Data_cleanup
@@ -32,16 +23,16 @@ def visualize_data():
     processed_testing_labels = []
 
     for i, x in enumerate(training_indexes):
-        graph = Graph_preprocessing_functions.make_graph_for_image_slic(training_data[x])
+        graph = Graph_preprocessing_functions.make_graph_for_image_slic(training_data[x], n_segments)
         if i < view_size:
-            segments = slic(training_data[x], n_segments=n_segments, sigma=HyperParameters.sigma)
+            segments = slic(training_data[x], n_segments=50, sigma=HyperParameters.sigma)
             Graph_preprocessing_functions.show_comparison(training_data[x], training_labels[x], segments)
             Graph_preprocessing_functions.draw_graph(graph)
         processed_training_graphs.append(graph)
         processed_training_labels.append(training_labels[x])
 
     for i, x in enumerate(testing_indexes):
-        graph = Graph_preprocessing_functions.make_graph_for_image_slic(testing_data[x])
+        graph = Graph_preprocessing_functions.make_graph_for_image_slic(testing_data[x], n_segments)
         if i < view_size:
             segments = slic(testing_data[x], n_segments=n_segments, sigma=HyperParameters.sigma)
             Graph_preprocessing_functions.show_comparison(testing_data[x], testing_labels[x], segments)

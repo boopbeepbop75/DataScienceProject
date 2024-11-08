@@ -1,6 +1,6 @@
 import torch
-from Graph_preprocessing_functions import make_graph_for_image_slic, draw_graph, show_comparison, show_comparison_no_label, convert_to_data
-from Data_cleanup import load_and_preprocess_images
+from Graph_preprocessing_functions import make_graph_for_image_slic, draw_graph, show_comparison_no_label, convert_to_data
+from Data_cleanup import load_and_preprocess_images, load_and_preprocess_pred_images
 import Utils as U
 from GNN_Model import GNN
 import HyperParameters
@@ -14,6 +14,8 @@ from io import BytesIO
 import numpy as np
 
 device = HyperParameters.device
+amount = 10
+which = "pred"
 
 Model_0 = GNN(input_dim=HyperParameters.input_dim)
 try:
@@ -24,7 +26,6 @@ Model_0.to(device)
 
 def model_on_test_data():
     num_correct = 0
-    amount = 10
     images, labels = load_and_preprocess_images(U.testing_folders)
     for x in range(amount):
         img_index = random.randint(0, len(images)-1)
@@ -33,6 +34,16 @@ def model_on_test_data():
         input('press enter to continue...')
 
     print(f"Percentage correct: {num_correct/amount*100:2f}%")
+
+def model_on_prediction_data():
+    num_correct = 0
+    images = load_and_preprocess_pred_images(U.pred_folders)
+    for x in range(amount):
+        img_index = random.randint(0, len(images))
+        img = images[img_index]
+        segments = slic(img, n_segments=HyperParameters.n_segments, sigma=HyperParameters.sigma)
+        show_comparison_no_label(img, segments)
+        make_prediction(img)
 
 def model_on_new_images():
     # Replace this with your image URL
@@ -77,4 +88,7 @@ def make_prediction(img):
         return predicted_class
 
 if __name__ == "__main__":
-    model_on_new_images()
+    if which == 'pred':
+        model_on_prediction_data()
+    else:
+        model_on_new_images()

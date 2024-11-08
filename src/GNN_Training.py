@@ -3,14 +3,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch_geometric.loader import DataLoader
-from torch_geometric.data import Data
-from torch_geometric.utils import to_networkx
 
 import Data_cleanup
 import HyperParameters
 import Utils as U
 from GNN_Model import GNN
-from Graph_preprocessing_functions import is_grey, draw_graph, convert_to_data
+from Graph_preprocessing_functions import convert_to_data
 device = HyperParameters.device
 print(device)
 

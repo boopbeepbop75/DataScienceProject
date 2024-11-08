@@ -1,12 +1,10 @@
 import glob
 import os
-import multiprocessing as mp
 
 import numpy as np
 import torch
 from PIL import Image
 from skimage.segmentation import slic
-from skimage.io import imread
 from torch_geometric.utils import from_networkx
 
 import Graph_preprocessing_functions
@@ -21,6 +19,26 @@ def show_img(img, label):
   plt.imshow(img.permute(1, 2, 0))
   plt.title(HyperParameters.CLASSES[label])
   plt.show()
+
+def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
+    images = []
+    print(folder)
+    num = 0
+    for ext in extensions:
+        for image_path in glob.glob(os.path.join(folder, f"*.{ext}")):
+            try:
+                img = Image.open(image_path).convert("RGB").resize(target_size)
+                img_array = np.array(img, dtype=np.float32) / 255.0
+                # Get the height, width, and number of channels (if it's a color image)
+                '''height, width = img_array.shape[:2]
+                print(height, width)'''
+                images.append(img_array)
+                num+=1
+
+            except Exception as e:
+                print(f"Failed to process {image_path}: {e}")
+    print(f'Amount: {num}')
+    return np.array(images)
 
 def load_and_preprocess_images(folders, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
     images = []

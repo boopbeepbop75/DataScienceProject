@@ -1,29 +1,12 @@
-import random
-from itertools import combinations
-
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision
-import torchvision.transforms as transforms
-from scipy.ndimage import find_objects
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data
-from torch_geometric.utils import from_networkx, to_networkx
-from torch_geometric.nn import GCNConv
-from torchvision.transforms import ToTensor
-from torch_geometric.data import Batch
-
-import Data_cleanup
+from torch_geometric.utils import to_networkx
 import Graph_preprocessing_functions
 import HyperParameters
 import Utils as U
-from Dataset import SLICDataset
 import Data_Visualization
 from GNN_Model import GNN
 

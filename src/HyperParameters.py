@@ -14,7 +14,7 @@ OUTPUT_SHAPE = len(CLASSES)
 LEARNING_RATE = .0002
 EPOCHS = 200
 PATIENCE = 10  # Number of epochs to wait before early stopping
-input_dim=3+1+1+1
+input_dim=3+1+1+1 #Color(3), eccentricity(1), aspect_ratio(1), solidity(1)
 
 #Cuda
 device = "cuda" if torch.cuda.is_available() else "cpu"

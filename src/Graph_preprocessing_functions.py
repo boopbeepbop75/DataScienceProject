@@ -2,13 +2,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage.segmentation import slic, mark_boundaries
-from skimage import color
 from skimage.measure import regionprops, label
 from HyperParameters import *
 import torch
-import multiprocessing as mp
-from skimage.io import imread
 from torch_geometric.data import Data
+import HyperParameters
 
 # Original image
 def show_comparison(image, label, segments):
@@ -96,7 +94,7 @@ def calculate_eccentricity(segments, segment_id):
     return region.eccentricity, aspect_ratio, region.solidity
 
 
-def make_graph_for_image_slic(slic_image):
+def make_graph_for_image_slic(slic_image, n_segments=HyperParameters.n_segments):
     segments = slic(slic_image, n_segments=n_segments, sigma=sigma, compactness=1)
     
     # Create the graph
