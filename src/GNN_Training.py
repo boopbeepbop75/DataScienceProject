@@ -187,8 +187,11 @@ for epoch in range(EPOCHS):
         print(f'Saved best model with validation loss: {best_val_loss:.4f}')
         epochs_no_improve = 0  # Reset counter if improvement
     else:
-        epochs_no_improve += 1
-        print(f'Num epochs since improvement: {epochs_no_improve}')
+        if testing_loss > training_loss:
+            epochs_no_improve += 1
+            print(f'Num epochs since improvement: {epochs_no_improve}')
+        else:
+            print("Not the best, although model is not overfitting yet.")
         #stop training if overfitting starts to happen
         if epochs_no_improve >= patience:
             print("Early stopping")
