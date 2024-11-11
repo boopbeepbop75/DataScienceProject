@@ -3,6 +3,7 @@ from Graph_preprocessing_functions import make_graph_for_image_slic, draw_graph,
 from Data_cleanup import load_and_preprocess_images, load_and_preprocess_pred_images
 import Utils as U
 from GNN_Model import GNN
+import GNN_Model_1
 import HyperParameters
 from skimage.segmentation import slic
 from torch_geometric.utils import from_networkx
@@ -16,12 +17,16 @@ import numpy as np
 device = HyperParameters.device
 amount = 10
 which = "pred"
+which_model = "H"
 
 Model_0 = GNN(input_dim=HyperParameters.input_dim)
+Model_H = GNN_Model_1.GNN(input_dim=HyperParameters.input_dim)
 try:
     Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_0.pth').resolve()))
+    Model_H.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_H.pth').resolve()))
 except:
     Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_0.pth').resolve(), map_location=torch.device('cpu')))
+    Model_H.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_H.pth').resolve(), map_location=torch.device('cpu')))
 Model_0.to(device)
 
 def model_on_test_data():
@@ -74,14 +79,19 @@ def make_prediction(img):
     data = convert_to_data(graph)
     data = data.to(device)
     print("Image converted to graph...")
-
-    Model_0.eval()
+    if which_model == '0':
+        Model_0.eval()
+    else: 
+        Model_H.eval()
     with torch.no_grad():
         x = data.x
         edge_index = data.edge_index
         batch = torch.zeros(x.size(0), dtype=torch.long)  # All nodes belong to the same graph, so all batch indices are 0
         batch = batch.to(device)
-        prediction = F.softmax(Model_0.forward(x, edge_index, batch))
+        if which_model == '0':
+            prediction = F.softmax(Model_0.forward(x, edge_index, batch))
+        else:
+            prediction = F.softmax(Model_H.forward(x, edge_index, batch))
         predicted_class = prediction.argmax(dim=1)
         graph_label = f"\nPredicted class: {HyperParameters.CLASSES[predicted_class]}; Confidence: {prediction[0][predicted_class].item()*100:.2f}%"
         draw_graph(img_graph, graph_label)
