@@ -69,7 +69,6 @@ def model_on_new_images():
 
 def make_prediction(img):
     img_graph = make_graph_for_image_slic(img)
-    draw_graph(img_graph)
 
     graph = from_networkx(img_graph)
     data = convert_to_data(graph)
@@ -84,7 +83,8 @@ def make_prediction(img):
         batch = batch.to(device)
         prediction = F.softmax(Model_0.forward(x, edge_index, batch))
         predicted_class = prediction.argmax(dim=1)
-        print(f"\nPredicted class: {HyperParameters.CLASSES[predicted_class]}; Confidence: {prediction[0][predicted_class].item()*100:.2f}%")
+        graph_label = f"\nPredicted class: {HyperParameters.CLASSES[predicted_class]}; Confidence: {prediction[0][predicted_class].item()*100:.2f}%"
+        draw_graph(img_graph, graph_label)
         return predicted_class
 
 if __name__ == "__main__":

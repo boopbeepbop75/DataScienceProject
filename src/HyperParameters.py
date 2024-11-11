@@ -9,7 +9,9 @@ target_size=(150, 150)
 ### MODEL HYPER PARAMETERS ###
 CLASSES = ["Buildings", "Forest", "Glacier", "Mountain", "Sea", "Street"]
 BATCH_SIZE = 32
+DROPOUT_RATE = .5
 HIDDEN_UNITS = 40
+NUM_HEADS = 16
 OUTPUT_SHAPE = len(CLASSES)
 LEARNING_RATE = .0002
 EPOCHS = 200

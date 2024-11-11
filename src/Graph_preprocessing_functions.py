@@ -117,7 +117,7 @@ def make_graph_for_image_slic(slic_image, n_segments=HyperParameters.n_segments)
 
     return G
 
-def draw_graph(G):
+def draw_graph(G, label=''):
     node_colors = [data['color'] for _, data in G.nodes(data=True)]
     # Extract eccentricity values for node sizes
     eccentricity_values = [data['eccentricity'] for _, data in G.nodes(data=True)]
@@ -146,7 +146,7 @@ def draw_graph(G):
     # Draw edges and labels as usual
     nx.draw_networkx_edges(G, pos)
     #nx.draw_networkx_labels(G, pos, font_color="white")
-
+    plt.title(label)
     plt.show()
 
 #Detect grey images
