@@ -1,9 +1,9 @@
 # How to use:
 
-1. If you want to download and preprocess the images, go to https://www.kaggle.com/datasets/puneet6060/intel-image-classification?resource=download and download the dataset into the data_raw folder, 
-
-then run the Data_cleanup.py file
-
+1. If you want to download and preprocess the images, go to https://www.kaggle.com/datasets/puneet6060/intel-image-classification?resource=download and download the dataset into the data_raw folder,  
+  
+then run the Data_cleanup.py file  
+  
 Alternatively, if you want to preprocess the images and train a model of your own, run the GNN_Training.py file instead.
 
 2. If you want to use the pretrained model, run the Model_Predict.py file. It will automatically open the prediction images dataset and run the model on 10 of them note: If you would like to input your own images given a URL, change the 'which' variable on line 18 in Model_Predict.py from 'pred' to 'url'
