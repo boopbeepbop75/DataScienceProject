@@ -99,11 +99,11 @@ for epoch in range(EPOCHS):
         batch = batch_graphs.batch
         #1: Get predictions from the model
         y_pred = Model_0(x, edge_index, batch)
-        #print(y_pred)
+
         #2: Calculate the loss on the model's predictions
         loss = loss_fn(y_pred, y) 
         training_loss += loss.item() #Keep track of each batch's loss
-        #print(training_loss)
+
         #3: optimizer zero grad
         optimizer.zero_grad()
 
