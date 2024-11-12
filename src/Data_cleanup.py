@@ -21,6 +21,7 @@ def show_img(img, label):
   plt.show()
 
 def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
+    #Extract images from data_pred folder, turn them into numpy arrays normalized between 0 and 1
     images = []
     print(folder)
     num = 0
@@ -29,9 +30,6 @@ def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_s
             try:
                 img = Image.open(image_path).convert("RGB").resize(target_size)
                 img_array = np.array(img, dtype=np.float32) / 255.0
-                # Get the height, width, and number of channels (if it's a color image)
-                '''height, width = img_array.shape[:2]
-                print(height, width)'''
                 images.append(img_array)
                 num+=1
 
@@ -41,6 +39,7 @@ def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_s
     return np.array(images)
 
 def load_and_preprocess_images(folders, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
+    #Extract images and labels from data_raw folder, turn them into numpy arrays normalized between 0 and 1
     images = []
     labels = []
     for label, folder in enumerate(folders):
@@ -52,9 +51,6 @@ def load_and_preprocess_images(folders, target_size=HyperParameters.target_size,
                 try:
                     img = Image.open(image_path).convert("RGB").resize(target_size)
                     img_array = np.array(img, dtype=np.float32) / 255.0
-                    # Get the height, width, and number of channels (if it's a color image)
-                    '''height, width = img_array.shape[:2]
-                    print(height, width)'''
                     images.append(img_array)
                     labels.append(label)
                     num+=1
@@ -65,8 +61,10 @@ def load_and_preprocess_images(folders, target_size=HyperParameters.target_size,
     return np.array(images), np.array(labels)
 
 def process_images_to_graphs(images, labels):
+    #Takes images and their labels
     processed_graphs = []
-    stops = sorted(random.sample(range(len(images)), min(20, len(images)))) #create random stops for visualization
+    #create random stops for visualization during prepocessing. Turn on/off using show_visualization_stops var in Hyperparameters folder.
+    stops = sorted(random.sample(range(len(images)), min(20, len(images)))) 
     print(stops)
     for i, image in enumerate(images):
         #Make the graph
@@ -84,7 +82,6 @@ def process_images_to_graphs(images, labels):
     return processed_graphs
 
 def clean_data():
-    classes = HyperParameters.CLASSES
     print(training_folders[0])
     print()
 
@@ -99,10 +96,11 @@ def clean_data():
     processed_testing_graphs = process_images_to_graphs(testing_data, testing_labels)
 
     print("Saving processed graphs...")
-    training_tensor = [from_networkx(G) for G in processed_training_graphs]  # Convert to PyTorch Geometric Data objects
-    testing_tensor =  [from_networkx(G) for G in processed_testing_graphs]  # Convert to PyTorch Geometric Data objects
+    training_tensor = [from_networkx(G) for G in processed_training_graphs]  # Convert Graphs to PyTorch Geometric Data objects
+    testing_tensor =  [from_networkx(G) for G in processed_testing_graphs]  # Convert Graphs to PyTorch Geometric Data objects
     print(training_tensor[0])
-    torch.save(training_tensor, (U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve())
+    #Save images
+    torch.save(training_tensor, (U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve()) 
     torch.save(testing_tensor, (U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
     
     print("Saving labels...")

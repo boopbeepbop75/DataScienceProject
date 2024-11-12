@@ -19,19 +19,6 @@ try:
     testing_data = torch.load((U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
     training_labels = np.load((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve())
     testing_labels = np.load((U.CLEAN_DATA_FOLDER / 'testing_labels.npy').resolve())
-    print(training_labels)
-    print(testing_labels)
-
-    #print(training_data)
-
-    # Extract the images, graphs, and edges
-    '''normalized_training_images = training_data['images']  # Images (already tensors)
-    training_edge_indices = training_data['edge_indices']  # Edge indices
-    training_node_features = training_data['node_features']  # Node features
-
-    normalized_testing_images = testing_data['images']  # Images (already tensors)
-    testing_edge_indices = testing_data['edge_indices']  # Edge indices
-    testing_node_features = testing_data['node_features']  # Node features'''
 
 except:
     # If the data hasn't been preprocessed, clean it, preprocess it, and save it
@@ -42,25 +29,11 @@ except:
     training_labels = np.load((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve())
     testing_labels = np.load((U.CLEAN_DATA_FOLDER / 'testing_labels.npy').resolve())
 
-    # Further preprocessing (assuming you generate node features and edges during cleanup)
-    # Example: create_edge_index_from_slic(segments) and compute_node_features(image, segments)
-
 #LABELS
 ###Finish loading data###
 
-def show_image(x, y):
-    fig = plt.figure("Superpixels -- %d segments" % (50))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.imshow(x)
-    plt.title(y)
-    plt.axis("off")
-    plt.show()
-
 ### HYPER PARAMETERS ###
-CLASSES = HyperParameters.CLASSES
 BATCH_SIZE = HyperParameters.BATCH_SIZE
-HIDDEN_UNITS = HyperParameters.HIDDEN_UNITS
-OUTPUT_SHAPE = len(CLASSES)
 LEARNING_RATE = HyperParameters.LEARNING_RATE
 EPOCHS = HyperParameters.EPOCHS
 
@@ -88,10 +61,6 @@ for graph, label in zip(testing_data, testing_labels):
 training_batches = DataLoader(training_group, batch_size=BATCH_SIZE, shuffle=True)
 testing_batches = DataLoader(testing_group, batch_size=BATCH_SIZE, shuffle=False)
 
-print("Batch Lengths")
-print(len(training_batches))
-print(len(testing_batches))
-
 #DECLARE MODEL INSTANCE WITH INPUT DIMENSION
 # Before the model call
 Model_0 = GNN(input_dim=HyperParameters.input_dim) # -3 color(R,G,B) + 1 Eccentricity + 1 Aspect_ratio + 1 solidity
@@ -100,7 +69,7 @@ Model_0.to(device)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(Model_0.parameters(), lr=LEARNING_RATE)
 
-#Make Accuracy function
+#Accuracy function
 def accuracy_fn(y_true, y_pred):
   correct = torch.eq(y_true, y_pred).sum().item()
   acc = (correct / len(y_pred)) * 100
@@ -183,7 +152,7 @@ for epoch in range(EPOCHS):
     if testing_loss < best_val_loss:
         best_val_loss = testing_loss
         # Save the model's parameters (state_dict) to a file
-        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / 'Model_1.pth').resolve())
+        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / HyperParameters.MODEL_NAME + '.pth').resolve())
         print(f'Saved best model with validation loss: {best_val_loss:.4f}')
         epochs_no_improve = 0  # Reset counter if improvement
     else:
