@@ -15,7 +15,7 @@ import numpy as np
 
 device = HyperParameters.device
 amount = 10
-which = "pred"
+which = "url"
 which_model = "0"
 
 Model_0 = GNN(input_dim=HyperParameters.input_dim)
@@ -24,17 +24,6 @@ try:
 except:
     Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_0.pth').resolve(), map_location=torch.device('cpu')))
 Model_0.to(device)
-
-def model_on_test_data():
-    num_correct = 0
-    images, labels = load_and_preprocess_images(U.testing_folders)
-    for x in range(amount):
-        img_index = random.randint(0, len(images)-1)
-        label = labels[img_index]
-        img = images[img_index]
-        input('press enter to continue...')
-
-    print(f"Percentage correct: {num_correct/amount*100:2f}%")
 
 def model_on_prediction_data():
     num_correct = 0
@@ -45,9 +34,13 @@ def model_on_prediction_data():
         segments = slic(img, n_segments=HyperParameters.n_segments, sigma=HyperParameters.sigma)
         show_comparison_no_label(img, segments)
         make_prediction(img)
+        cor = input("Was I correct? (y/n): ")
+        if cor == 'y':
+            num_correct+=1
+    
+    print(f"Percentage correct: {num_correct/amount*100:2f}%")  
 
 def model_on_new_images():
-    # Replace this with your image URL
     while True:
         image_url = input("\nEnter image URL: ")
         try:

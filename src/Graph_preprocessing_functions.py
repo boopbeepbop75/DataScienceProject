@@ -127,7 +127,7 @@ def draw_graph(G, label=''):
     node_shapes = ["o" if G.nodes[node]['aspect_ratio'] < 1.5 else "s" for node in G.nodes]
 
     # Normalize the eccentricity values to scale them for node sizes
-    normalized_sizes = [500 * (ecc / max(eccentricity_values)) for ecc in eccentricity_values]  # Scale for visibility
+    normalized_sizes = [100 * (ecc / max(eccentricity_values)) for ecc in eccentricity_values]  # Scale for visibility
     #Draw the graph
     # Generate positions for nodes
     pos = nx.spring_layout(G)
