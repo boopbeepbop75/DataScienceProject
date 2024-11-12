@@ -29,7 +29,6 @@ except:
     training_labels = np.load((U.CLEAN_DATA_FOLDER / 'training_labels.npy').resolve())
     testing_labels = np.load((U.CLEAN_DATA_FOLDER / 'testing_labels.npy').resolve())
 
-#LABELS
 ###Finish loading data###
 
 ### HYPER PARAMETERS ###
