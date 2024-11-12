@@ -45,12 +45,6 @@ for graph, label in zip(training_data, training_labels):
     data = convert_to_data(graph, label)
     training_group.append(data)
 
-'''for graph in training_group:
-    for label in set(training_labels):'''
-
-
-print(f"View a graph data object: {training_group[0]}")
-
 for graph, label in zip(testing_data, testing_labels):
     #testing
     data = convert_to_data(graph, label)
