@@ -17,13 +17,13 @@ device = HyperParameters.device
 amount = 10 #Number of images to run the model on (if doing the datasets pred data)
 #Variable that decides whether to run the data on the datasets prediction data, or urls ('pred'/'url')
 which = "pred" 
-which_model = "0" #Can add in other trained models if needed 
+model = HyperParameters.MODEL_NAME + '.pth'
 
 Model_0 = GNN(input_dim=HyperParameters.input_dim)
 try:
-    Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_0.pth').resolve()))
+    Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / model).resolve()))
 except:
-    Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / 'Model_0.pth').resolve(), map_location=torch.device('cpu')))
+    Model_0.load_state_dict(torch.load((U.MODEL_FOLDER / model).resolve(), map_location=torch.device('cpu')))
 Model_0.to(device)
 
 def model_on_prediction_data():
@@ -76,15 +76,13 @@ def make_prediction(img):
     data = convert_to_data(graph)
     data = data.to(device) #Send data to GPU if available
     print("Image converted to graph...")
-    if which_model == '0':
-        Model_0.eval()
+    Model_0.eval()
     with torch.no_grad(): #Use the model's inference mode
         x = data.x
         edge_index = data.edge_index
         batch = torch.zeros(x.size(0), dtype=torch.long)  # All nodes belong to the same graph, so all batch indices are 0
         batch = batch.to(device)
-        if which_model == '0':
-            prediction = F.softmax(Model_0.forward(x, edge_index, batch), dim=1) #Model's prediction
+        prediction = F.softmax(Model_0.forward(x, edge_index, batch), dim=1) #Model's prediction
         predicted_class = prediction.argmax(dim=1) #Class prediction extracted from prediction 
         #Draw and label the graph with the model's prediction
         graph_label = f"\nPredicted class: {HyperParameters.CLASSES[predicted_class]}; Confidence: {prediction[0][predicted_class].item()*100:.2f}%"

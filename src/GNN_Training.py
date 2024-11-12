@@ -152,7 +152,7 @@ for epoch in range(EPOCHS):
     if testing_loss < best_val_loss:
         best_val_loss = testing_loss
         # Save the model's parameters (state_dict) to a file
-        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / HyperParameters.MODEL_NAME + '.pth').resolve())
+        torch.save(Model_0.state_dict(), (U.MODEL_FOLDER / (HyperParameters.MODEL_NAME + '.pth')).resolve())
         print(f'Saved best model with validation loss: {best_val_loss:.4f}')
         epochs_no_improve = 0  # Reset counter if improvement
     else:
