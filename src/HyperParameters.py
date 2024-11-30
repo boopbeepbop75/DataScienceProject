@@ -4,9 +4,12 @@ import torch
 n_segments = 300
 sigma = 5
 show_visualization_stops = False
-target_size=(150, 150)
+target_size=(150, 150) #Image HxW size
 
 ### MODEL HYPER PARAMETERS ###
+#Model name
+MODEL_NAME = 'Model_0'
+
 CLASSES = ["Buildings", "Forest", "Glacier", "Mountain", "Sea", "Street"]
 BATCH_SIZE = 32
 DROPOUT_RATE = .5
