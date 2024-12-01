@@ -13,23 +13,33 @@ import Utils as U
 from Utils import training_folders, testing_folders
 import random
 import matplotlib.pyplot as plt
+import torchvision.transforms as T
 
-#Check test image 1066
-def show_img(img, label):
-  plt.imshow(img.permute(1, 2, 0))
-  plt.title(HyperParameters.CLASSES[label])
-  plt.show()
+def apply_augmentations(image):
 
-def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
+    transforms = [
+        T.RandomResizedCrop(size= HyperParameters.target_size, scale=(0.7, 0.8), ratio=(0.75, 1.33)),
+        T.ColorJitter(brightness=1.5, contrast=0.3, saturation=0.3, hue=0.1),
+        T.RandomErasing(p=1.0, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),
+    ]
+    selected_transform = random.choice(transforms)
+    #print(transforms.index(selected_transform))
+    # Convert the image to a PyTorch tensor before applying transformations
+    tensor_image = T.ToTensor()(image)
+    augmented_image = selected_transform(tensor_image)
+    
+    # Convert back to PIL for consistency
+    return T.ToPILImage()(augmented_image)
+
+def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_size):
     #Extract images from data_pred folder, turn them into numpy arrays normalized between 0 and 1
     images = []
     print(folder)
     num = 0
-    for ext in extensions:
-        for image_path in glob.glob(os.path.join(folder, f"*.{ext}")):
+    for image_path in glob.glob(os.path.join(folder, "*.jpg")):
             try:
                 img = Image.open(image_path).convert("RGB").resize(target_size)
-                img_array = np.array(img, dtype=np.float32) / 255.0
+                img_array = np.array(img, dtype=np.float32)
                 images.append(img_array)
                 num+=1
 
@@ -39,26 +49,38 @@ def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_s
     return np.array(images)
 
 def load_and_preprocess_images(folders, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
-    #Extract images and labels from data_raw folder, turn them into numpy arrays normalized between 0 and 1
+   #Extract images from data_pred folder, turn them into numpy arrays normalized between 0 and 1
+
+    #makes sure only the training data is being augmented
+    augment = False
+    if(folders == training_folders):
+        augment = True
+
     images = []
     labels = []
+    #print(folder)
+    num = 0
     for label, folder in enumerate(folders):
         print(folder)
         print(label)
-        num = 0
-        for ext in extensions:
-            for image_path in glob.glob(os.path.join(folder, f"*.{ext}")):
+        for image_path in glob.glob(os.path.join(folder, "*.jpg")):
                 try:
                     img = Image.open(image_path).convert("RGB").resize(target_size)
-                    img_array = np.array(img, dtype=np.float32) / 255.0
+                    img_array = np.array(img, dtype=np.float32) 
                     images.append(img_array)
                     labels.append(label)
-                    num+=1
 
+                    if augment:
+                        aug_img = apply_augmentations(img)
+                        Aug_img_array = np.array(img, dtype=np.float32)
+                        images.append(Aug_img_array)
+                        labels.append(label)
+                        num+=1
+                    num+=1
                 except Exception as e:
                     print(f"Failed to process {image_path}: {e}")
-        print(f'Amount: {num}')
-    return np.array(images), np.array(labels)
+    print(f'Amount: {num}')
+    return images, labels
 
 def process_images_to_graphs(images, labels):
     #Takes images and their labels
@@ -98,7 +120,7 @@ def clean_data():
     print("Saving processed graphs...")
     training_tensor = [from_networkx(G) for G in processed_training_graphs]  # Convert Graphs to PyTorch Geometric Data objects
     testing_tensor =  [from_networkx(G) for G in processed_testing_graphs]  # Convert Graphs to PyTorch Geometric Data objects
-    print(training_tensor[0])
+    #print(training_tensor)
     #Save images
     torch.save(training_tensor, (U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve()) 
     torch.save(testing_tensor, (U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
