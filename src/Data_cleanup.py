@@ -39,7 +39,7 @@ def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_s
     for image_path in glob.glob(os.path.join(folder, "*.jpg")):
             try:
                 img = Image.open(image_path).convert("RGB").resize(target_size)
-                img_array = np.array(img, dtype=np.float32)
+                img_array = np.array(img, dtype=np.float32) / 255.0
                 images.append(img_array)
                 num+=1
 
@@ -66,7 +66,7 @@ def load_and_preprocess_images(folders, target_size=HyperParameters.target_size)
         for image_path in glob.glob(os.path.join(folder, "*.jpg")):
                 try:
                     img = Image.open(image_path).convert("RGB").resize(target_size)
-                    img_array = np.array(img, dtype=np.float32) 
+                    img_array = np.array(img, dtype=np.float32) / 255.0
                     images.append(img_array)
                     labels.append(label)
 
