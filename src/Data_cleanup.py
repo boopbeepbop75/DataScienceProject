@@ -18,9 +18,9 @@ import torchvision.transforms as T
 def apply_augmentations(image):
 
     transforms = [
-        T.RandomResizedCrop(size= HyperParameters.target_size, scale=(0.7, 0.8), ratio=(0.75, 1.33)),
+        T.RandomResizedCrop(size= HyperParameters.target_size, scale=(0.6, 0.8)),
         T.ColorJitter(brightness=1.5, contrast=0.3, saturation=0.3, hue=0.1),
-        T.RandomErasing(p=1.0, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),
+        T.RandomErasing(p=1.0, scale=(0.2, 0.33), ratio=(0.3, 3.3), value=0),
     ]
     selected_transform = random.choice(transforms)
     #print(transforms.index(selected_transform))
@@ -48,7 +48,7 @@ def load_and_preprocess_pred_images(folder, target_size=HyperParameters.target_s
     print(f'Amount: {num}')
     return np.array(images)
 
-def load_and_preprocess_images(folders, target_size=HyperParameters.target_size, extensions=("jpg", "jpeg", "png", "gif")):
+def load_and_preprocess_images(folders, target_size=HyperParameters.target_size):
    #Extract images from data_pred folder, turn them into numpy arrays normalized between 0 and 1
 
     #makes sure only the training data is being augmented
@@ -72,7 +72,7 @@ def load_and_preprocess_images(folders, target_size=HyperParameters.target_size,
 
                     if augment:
                         aug_img = apply_augmentations(img)
-                        Aug_img_array = np.array(img, dtype=np.float32)
+                        Aug_img_array = np.array(aug_img, dtype=np.float32)
                         images.append(Aug_img_array)
                         labels.append(label)
                         num+=1
@@ -121,7 +121,7 @@ def clean_data():
     training_tensor = [from_networkx(G) for G in processed_training_graphs]  # Convert Graphs to PyTorch Geometric Data objects
     testing_tensor =  [from_networkx(G) for G in processed_testing_graphs]  # Convert Graphs to PyTorch Geometric Data objects
     #print(training_tensor)
-    #Save images
+    #Save graphs
     torch.save(training_tensor, (U.CLEAN_DATA_FOLDER / 'processed_training_graphs.pt').resolve()) 
     torch.save(testing_tensor, (U.CLEAN_DATA_FOLDER / 'processed_testing_graphs.pt').resolve())
     
@@ -133,3 +133,4 @@ def clean_data():
 
 if __name__ == "__main__":
     clean_data()
+
